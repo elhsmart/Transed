@@ -1,0 +1,16 @@
+{
+    "name": "Transed",
+    "description": "Simple text editor for translators.",
+    "version": "0.1",
+    "app": {
+        "background": {
+            "scripts": ["js/background.js"]
+        }
+    },
+    "permissions": [
+        {"fileSystem": ["write"]},
+        "unlimitedStorage",
+        "contextMenus"
+    ],
+    "icons": { "16": "images/transed-16.png", "128": "images/transed-128.png" }
+}
