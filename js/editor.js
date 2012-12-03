@@ -95,8 +95,64 @@ var TransedEditor = {
         }
     },
 
-    onFileOpen: function() {
-        console.log(arguments);
+    setEditedFile: function(fileEntry, callback) {
+        var self = TransedEditor;
+        if(self.instance == undefined) {
+            self.instance = fileEntry;
+            callback();
+            return;
+        }
+    },
+
+    onFileOpen: function(fileEntry) {
+        var self = TransedEditor;
+        self.setEditedFile(fileEntry, function(){
+            self.createEditBox(fileEntry);
+        });
+    },
+
+    buildEditBox: function() {
+        var self = this;
+        // replacing all repeated linebreaks
+        self.editedText = self.editedText.replace(/\n{2,}|\r\n{2,}/g, "\n");
+        self.paragraphs = self.editedText.split("\n");
+
+        for(var paragraph in self.paragraphs) {
+            self.paragraphs[paragraph] = $.trim(self.paragraphs[paragraph]).split(".");
+            for(var sentence in self.paragraphs[paragraph]) {
+                if($.trim(self.paragraphs[paragraph][sentence]).length == 0) {
+                    self.paragraphs[paragraph].remove(sentence);
+                    continue;
+                }
+                self.paragraphs[paragraph][sentence] = $.trim(self.paragraphs[paragraph][sentence])+".";
+            }
+        }
+    },
+
+    setEditedText: function(text) {
+        var self = this;
+        self.editedText = text;
+    },
+
+    createEditBox: function(fileEntry) {
+        var self = this;
+        if (fileEntry) {
+            fileEntry.file(function(file){
+                var fileReader = new FileReader();
+
+                fileReader.onload = function(e) {
+                    self.showToolbar();
+                    self.setEditedText(e.target.result);
+                    self.buildEditBox();
+                };
+
+                fileReader.onerror = function(e) {
+                    console.log("Read failed: " + e.toString());
+                };
+
+                fileReader.readAsText(file);
+            }, self.fileErrorHandler);
+        }
     },
 
     bindTopMenu: function() {
@@ -104,6 +160,40 @@ var TransedEditor = {
         for(var item in self.menu.topMenu) {
             self.menu.topMenu[item]($("."+item));
         }
+    },
+
+    fileErrorHandler: function(e) {
+        var msg = "";
+
+        switch (e.code) {
+            case FileError.QUOTA_EXCEEDED_ERR:
+                msg = "QUOTA_EXCEEDED_ERR";
+                break;
+            case FileError.NOT_FOUND_ERR:
+                msg = "NOT_FOUND_ERR";
+                break;
+            case FileError.SECURITY_ERR:
+                msg = "SECURITY_ERR";
+                break;
+            case FileError.INVALID_MODIFICATION_ERR:
+                msg = "INVALID_MODIFICATION_ERR";
+                break;
+            case FileError.INVALID_STATE_ERR:
+                msg = "INVALID_STATE_ERR";
+                break;
+            default:
+                msg = "Unknown Error";
+                break;
+        };
+
+        console.log("Error: " + msg);
+    },
+
+    showToolbar: function() {
+        var self = this;
+        $(".footer")
+            .html("File: " + self.instance.name )
+            .show();
     },
 
     init: function(){

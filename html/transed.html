@@ -7,6 +7,7 @@
         <link rel="stylesheet" href="/css/style.css"/>
 
         <script type="text/javascript" src="/js/lib/jquery.js"></script>
+        <script type="text/javascript" src="/js/lib/addon.js"></script>
         <script type="text/javascript" src="/js/editor.js"></script>
     </head>
     <body>
@@ -34,8 +35,42 @@
         </div>
 
         <div class="container">
-            <p>Welcome to Transed editor.</p>
-            <p>To start edit your translation please open .txt file with source text or .trs Project file.</p>
+            <div class="welcome">
+                <p>Welcome to Transed editor.</p>
+                <p>To start edit your translation please open .txt file with source text or .trs Project file.</p>
+            </div>
+            <div class="editor-pane">
+                <div class="well paragraph-block">
+                    <div class="sentence-block">
+                        <div class="trans_from">
+                            <textarea></textarea>
+                        </div>
+                        <div class="trans_to">
+                            <textarea></textarea>
+                        </div>
+                        <div class="trans_to_buttons btn-group">
+                            <button class="btn btn-mini btn-inverse"><span class="icon-arrow-right"></span>&nbsp;</button>
+                            <button class="btn btn-mini btn-inverse"><span class="icon-google-plus"></span>&nbsp;</button>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="sentence-block last">
+                        <div class="trans_from">
+                            <textarea></textarea>
+                        </div>
+                        <div class="trans_to">
+                            <textarea></textarea>
+                        </div>
+                        <div class="trans_to_buttons btn-group">
+                            <button class="btn btn-mini btn-inverse"><span class="icon-arrow-right"></span>&nbsp;</button>
+                            <button class="btn btn-mini btn-inverse"><span class="icon-google-plus"></span>&nbsp;</button>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div class="footer"></div>
     </body>
 </html>

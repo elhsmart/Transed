@@ -73,3 +73,79 @@ a [class*=" icon-"] {
     padding-left: 2px;
     padding-right: 2px;
 }
+
+.footer {
+    display:none;
+    position:absolute;
+    bottom:0px;
+    padding-left:20px;
+    height:24px;
+    background:#eee;
+    width:100%;
+}
+
+.welcome {
+    display:block;
+}
+
+.editor-pane {
+    *display:none;
+}
+
+.trans_from {
+    float:left;
+    width:46%;
+}
+
+.trans_to {
+    float:right;
+    width:46%;
+}
+
+.trans_from textarea, .trans_to textarea {
+    width:100%;
+    margin:0;
+    padding:0;
+}
+
+.trans_from textarea {
+    margin-left:3%;
+}
+
+.trans_to textarea {
+    margin-left:-3%;
+}
+
+.container {
+    width: 98%;
+}
+
+.paragraph-block {
+    padding-left:0px;
+    padding-right:0px;
+    margin-bottom: 0;
+    padding-bottom: 5px;
+}
+
+.sentence-block {
+    padding-bottom:10px;
+    border-bottom:1px solid #e3e3e3;
+    margin-bottom:10px;
+}
+
+.sentence-block.last {
+    padding-bottom:0;
+    border-bottom: 0;
+}
+
+.trans_to_buttons {
+    margin-top:10px;
+    float:right;
+    width:120px;
+    height: 26px;
+    margin-right: 2%;
+}
+
+.trans_to_buttons button {
+    width:60px;
+}
