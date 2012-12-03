@@ -3,12 +3,59 @@ var TransedEditor = {
     // window state. normal / max / min
     state: "normal",
 
+    popup: {
+        about: {
+            frame: "none",
+            width: 600,
+            height: 300,
+            minWidth: 600,
+            minHeight: 300,
+            left: 0,
+            top: 0
+        }
+    },
+
     menu: {
         topMenu: {
+            "top-menu-open": function(el) {
+
+            },
+            "top-menu-save": function(el) {
+
+            },
+            "top-menu-undo": function(el) {
+
+            },
+            "top-menu-redo": function(el) {
+
+            },
+            "top-menu-about": function(el) {
+
+                el.parent().click(function(){
+                    try {
+                        if(TransedEditor.popup.about.instance != undefined) {
+                            TransedEditor.popup.about.instance.focus();
+                            return;
+                        }
+                    } catch (e) {
+                        delete TransedEditor.popup.about.instance;
+                        console.log("Seems like popup has been closed. Freeing memory for it.");
+                    }
+
+                    var currentWin  = chrome.app.window.current();
+                    var popupScreen = TransedEditor.popup.about;
+                    popupScreen.top = currentWin.getBounds().top+((currentWin.getBounds().height - popupScreen.height)/2);
+                    popupScreen.left = currentWin.getBounds().left+((currentWin.getBounds().width - popupScreen.width)/2);
+
+                    chrome.app.window.create('html/about.html', popupScreen, function(popupWindow){
+                        TransedEditor.popup.about.instance = popupWindow;
+                    });
+                    console.log(TransedEditor);
+                });
+            },
             "icon-folder-open": function(el) {
                 el.parent().click(function(){
                     var a = chrome.fileSystem;
-                    console.log(a);
                     chrome.fileSystem.chooseEntry({
                         accepts         :   [{
                             extensions      :["txt"]
