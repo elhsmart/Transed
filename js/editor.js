@@ -215,6 +215,12 @@ var TransedEditor = {
             self.headerHeight = $(".navbar").height();
             self.footerHeight = 60;
             self.contentBlock = $(".editor-pane").get(0);
+
+            $(".editor-pane").scrollbars({
+                forceScrollbars:true,
+                persistantSize:true,
+                scrollbarAutohide:true
+            });
         });
 
         return self;
