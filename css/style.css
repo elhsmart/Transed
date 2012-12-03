@@ -85,7 +85,7 @@ a [class*=" icon-"] {
 }
 
 .welcome {
-    display:block;
+    display:none;
 }
 
 .editor-pane {

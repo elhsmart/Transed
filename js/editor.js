@@ -196,11 +196,25 @@ var TransedEditor = {
             .show();
     },
 
+    onResize: function(){
+        TransedEditor.contentBlock.style.height = (window.innerHeight - TransedEditor.footerHeight - TransedEditor.headerHeight)+"px";
+    },
+
+    bindListeners: function() {
+        var self = this;
+        $(window).resize(self.onResize);
+    },
+
     init: function(){
         var self = this;
 
         $(document).ready(function(){
+            self.bindListeners();
             self.bindTopMenu();
+
+            self.headerHeight = $(".navbar").height();
+            self.footerHeight = 60;
+            self.contentBlock = $(".editor-pane").get(0);
         });
 
         return self;
