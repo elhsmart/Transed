@@ -5,8 +5,17 @@ var TransedEditor = {
 
     menu: {
         topMenu: {
-            "icon-open": function() {
-
+            "icon-folder-open": function(el) {
+                el.parent().click(function(){
+                    var a = chrome.fileSystem;
+                    console.log(a);
+                    chrome.fileSystem.chooseEntry({
+                        accepts         :   [{
+                            extensions      :["txt"]
+                        }],
+                        type            :   'openFile'
+                    }, TransedEditor.onFileOpen);
+                });
             },
             "icon-resize-full": function(el) {
                 el.attr("class", "icon-resize-full");
@@ -37,6 +46,10 @@ var TransedEditor = {
                 })
             }
         }
+    },
+
+    onFileOpen: function() {
+        console.log(arguments);
     },
 
     bindTopMenu: function() {
