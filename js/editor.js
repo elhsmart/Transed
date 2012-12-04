@@ -1,7 +1,10 @@
 var TransedEditorScripts = [
     'lib/jquery',
     'lib/handlebars.runtime',
-    'lib/addon',
+    'lib/addon'
+];
+
+var TransedEditorPlugins = [
     'lib/jquery.mousewheel',
     'lib/jquery.scrollbars'
 ];
@@ -13,22 +16,19 @@ var TransedEditorTemplates = [
 ];
 
 requirejs.config({
-    //By default load any module IDs from js/lib
     baseUrl: '/js',
-    //except, if the module ID starts with "app",
-    //load it from the js/app directory. paths
-    //config is relative to the baseUrl, and
-    //never includes a ".js" extension since
-    //the paths config could be for a directory.
     paths: {
         lib: '/js/lib',
         tmpl: '/js/tmpl'
     }
 });
 
-requirejs(TransedEditorScripts.concat(TransedEditorTemplates),
+requirejs(TransedEditorScripts,
     function($) {
-        TransedEditor.init();
+        requirejs(TransedEditorPlugins.concat(TransedEditorTemplates),
+            function(){
+                TransedEditor.init();
+            })
     });
 
 var TransedEditor = {
@@ -144,6 +144,17 @@ var TransedEditor = {
         });
     },
 
+    measureText: function(width, text) {
+        console.log(text);
+        var el = $(".text-measure");
+
+        el
+            .css({width:(width-20)+"px"})
+            .html(text);
+
+        return el.height();
+    },
+
     buildEditBox: function() {
         var self = this;
         // replacing all repeated linebreaks
@@ -164,9 +175,18 @@ var TransedEditor = {
         var templateData = [];
         for(var paragraph in self.paragraphs) {
             for(var sentence in self.paragraphs[paragraph]) {
-                self.paragraphs[paragraph][sentence] = { translate_from: self.paragraphs[paragraph][sentence]};
+                self.paragraphs[paragraph][sentence] = {
+                    translate_from: self.paragraphs[paragraph][sentence],
+                    isLast: function(){ return this.number == this.length },
+                    number: parseInt(sentence)+1,
+                    height:  self.measureText(self.paragraphs[paragraph][sentence]),
+                    length: self.paragraphs[paragraph].length
+                };
             }
-            templateData[paragraph] = {sentences: self.paragraphs[paragraph]};
+            templateData[paragraph] = {
+                number: parseInt(paragraph)+1,
+                sentences: self.paragraphs[paragraph]
+            };
         }
 
         self.paragraphs = templateData;
@@ -174,8 +194,19 @@ var TransedEditor = {
         $(".editor-pane").css({
             display: "block"
         });
-
         $(".editor-pane").append(Handlebars.templates['editor.pane.html'](self));
+
+        var basicTextareaWidth = $($(".trans_from textarea").get("0")).width();
+
+        $(".trans_from textarea").each(function(){
+            // element.scrollHeight does not include paddings. SHIT. Holy fuckin shit, why browsers still SO UGLY?
+            // And developers still need to develop ugliest things possible...
+
+            var height = self.measureText(basicTextareaWidth, $(this).val());
+
+            $(this).css({"height":height+"px"})
+            $(this).parent().next().find("textarea").css({"height":height+"px"})
+        });
 
         $(".editor-pane").scrollbars({
             forceScrollbars:true,
@@ -284,7 +315,7 @@ var TransedEditor = {
             self.bindTopMenu();
 
             self.headerHeight = $(".navbar").height();
-            self.footerHeight = 100;
+            self.footerHeight = 70;
             self.contentBlock = $(".editor-pane").get(0);
 
             self.templating();
@@ -293,5 +324,4 @@ var TransedEditor = {
 
         return self;
     }
-
 };

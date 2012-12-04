@@ -2,6 +2,7 @@
 .navbar, .navbar-inverse .navbar-inner {
     background-color: #0072C6;
     background-image: none;
+    margin-bottom:0px;
     color: white;
 }
 
@@ -92,6 +93,11 @@ a [class*=" icon-"] {
     *display:none;
 }
 
+.editor-pane .rootWrap  {
+    width:98%;
+    margin: auto;
+}
+
 .trans_from {
     float:left;
     width:46%;
@@ -106,14 +112,17 @@ a [class*=" icon-"] {
     width:100%;
     margin:0;
     padding:0;
+    padding-left:1%;
+    padding-right:1%;
 }
 
 .trans_from textarea {
     margin-left:3%;
+    resize:none;
 }
 
 .trans_to textarea {
-    margin-left:-3%;
+    margin-left:-5%;
 }
 
 .container {
@@ -148,4 +157,31 @@ a [class*=" icon-"] {
 
 .trans_to_buttons button {
     width:60px;
+}
+
+h4 {
+    font-weight: normal;
+    margin-bottom: 0px;
+    padding-bottom: 4px;
+    margin-top:16px;
+    text-transform: capitalize;
+}
+
+.container {
+    width:100%;
+}
+
+textarea {
+    height:25px;
+    resize:vertical;
+}
+
+.support {
+    position: absolute;
+    line-height: 25px;
+    font-size: 14px;
+    border:1px solid red;
+    width:1px;
+    top:-99999px;
+    left:-99999px;
 }
