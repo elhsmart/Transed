@@ -1,3 +1,36 @@
+var TransedEditorScripts = [
+    'lib/jquery',
+    'lib/handlebars.runtime',
+    'lib/addon',
+    'lib/jquery.mousewheel',
+    'lib/jquery.scrollbars'
+];
+
+var TransedEditorTemplates = [
+    'tmpl/editor.pane.html',
+    'tmpl/editor.paragraph.html',
+    'tmpl/editor.sentence.html'
+];
+
+requirejs.config({
+    //By default load any module IDs from js/lib
+    baseUrl: '/js',
+    //except, if the module ID starts with "app",
+    //load it from the js/app directory. paths
+    //config is relative to the baseUrl, and
+    //never includes a ".js" extension since
+    //the paths config could be for a directory.
+    paths: {
+        lib: '/js/lib',
+        tmpl: '/js/tmpl'
+    }
+});
+
+requirejs(TransedEditorScripts.concat(TransedEditorTemplates),
+    function($) {
+        TransedEditor.init();
+    });
+
 var TransedEditor = {
 
     // window state. normal / max / min
@@ -127,6 +160,28 @@ var TransedEditor = {
                 self.paragraphs[paragraph][sentence] = $.trim(self.paragraphs[paragraph][sentence])+".";
             }
         }
+
+        var templateData = [];
+        for(var paragraph in self.paragraphs) {
+            for(var sentence in self.paragraphs[paragraph]) {
+                self.paragraphs[paragraph][sentence] = { translate_from: self.paragraphs[paragraph][sentence]};
+            }
+            templateData[paragraph] = {sentences: self.paragraphs[paragraph]};
+        }
+
+        self.paragraphs = templateData;
+
+        $(".editor-pane").css({
+            display: "block"
+        });
+
+        $(".editor-pane").append(Handlebars.templates['editor.pane.html'](self));
+
+        $(".editor-pane").scrollbars({
+            forceScrollbars:true,
+            persistantSize:true,
+            scrollbarAutohide:true
+        });
     },
 
     setEditedText: function(text) {
@@ -205,6 +260,22 @@ var TransedEditor = {
         $(window).resize(self.onResize);
     },
 
+    templating: function() {
+        var i = 0;
+        var partialName = "";
+        var templateName = "";
+        while(i < TransedEditorTemplates.length) {
+            partialName     = TransedEditorTemplates[i].split(".")[1];
+            templateName    = TransedEditorTemplates[i].split("/")[1];
+
+            Handlebars.registerPartial(partialName, Handlebars.templates[templateName]);
+
+            i++;
+            partialName     = "";
+            templateName    = "";
+        }
+    },
+
     init: function(){
         var self = this;
 
@@ -213,17 +284,14 @@ var TransedEditor = {
             self.bindTopMenu();
 
             self.headerHeight = $(".navbar").height();
-            self.footerHeight = 60;
+            self.footerHeight = 100;
             self.contentBlock = $(".editor-pane").get(0);
 
-            $(".editor-pane").scrollbars({
-                forceScrollbars:true,
-                persistantSize:true,
-                scrollbarAutohide:true
-            });
+            self.templating();
+            self.onResize();
         });
 
         return self;
     }
 
-}.init();
+};
