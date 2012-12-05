@@ -6,7 +6,10 @@ var TransedEditorScripts = [
 
 var TransedEditorPlugins = [
     'lib/jquery.mousewheel',
-    'lib/jquery.scrollbars'
+    'lib/jquery.scrollbars',
+    'lib/bootstrap.dropdown',
+    'lib/bootstrap.tooltip',
+    'lib/bootstrap.popover'
 ];
 
 var TransedEditorTemplates = [
@@ -33,6 +36,7 @@ requirejs(TransedEditorScripts,
 
 var TransedEditor = {
 
+    manifest: null,
     // window state. normal / max / min
     state: "normal",
 
@@ -50,11 +54,27 @@ var TransedEditor = {
 
     menu: {
         topMenu: {
-            "top-menu-open": function(el) {
-
-            },
             "top-menu-save": function(el) {
+                el.parent().click(function(){
+                    if(el.parents("li").hasClass("disabled")) {
+                        return;
+                    }
 
+                    var suggestName = TransedEditor.instance.name.split(".");
+                    suggestName.pop();
+                    suggestName = suggestName.join(".");
+                    if(suggestName.length == 0) {
+                        suggestName = "default";
+                    }
+
+                    chrome.fileSystem.chooseEntry({
+                        accepts         :   [{
+                            extensions      :["trs"],
+                        }],
+                        suggestedName   :   suggestName+".trs",
+                        type            :   'saveFile'
+                    }, TransedEditor.saveToTrs);
+                });
             },
             "top-menu-undo": function(el) {
 
@@ -63,7 +83,6 @@ var TransedEditor = {
 
             },
             "top-menu-about": function(el) {
-
                 el.parent().click(function(){
                     try {
                         if(TransedEditor.popup.about.instance != undefined) {
@@ -88,10 +107,9 @@ var TransedEditor = {
             },
             "icon-folder-open": function(el) {
                 el.parent().click(function(){
-                    var a = chrome.fileSystem;
                     chrome.fileSystem.chooseEntry({
                         accepts         :   [{
-                            extensions      :["txt"]
+                            extensions      :["txt","trs"]
                         }],
                         type            :   'openFile'
                     }, TransedEditor.onFileOpen);
@@ -128,6 +146,24 @@ var TransedEditor = {
         }
     },
 
+    displayExportBox: function() {
+        $(".editor-buttons").show();
+
+        $(".dropup ul li a").click(function(){
+            var checkedEl = $(this).parent();
+            $(this).parents(".dropup").find("button:first")
+                .html($(this).text())
+                .attr("lang", $(this).attr("lang"));
+            $(".dropup").find("li").each(function(){
+                $(this).show();
+            });
+
+            $(".dropup").find("button").each(function(){
+                $(".dropup ul li a[lang="+$(this).attr("lang")+"]").parent().hide();
+            });
+        });
+    },
+
     setEditedFile: function(fileEntry, callback) {
         var self = TransedEditor;
         if(self.instance == undefined) {
@@ -149,7 +185,7 @@ var TransedEditor = {
         var el = $(".text-measure");
 
         el
-            .css({width:(width-20)+"px"})
+            .css({width:(width-13)+"px"})
             .html(text);
 
         return el.height();
@@ -194,6 +230,7 @@ var TransedEditor = {
         $(".editor-pane").css({
             display: "block"
         });
+
         $(".editor-pane").append(Handlebars.templates['editor.pane.html'](self));
 
         var basicTextareaWidth = $($(".trans_from textarea").get("0")).width();
@@ -211,8 +248,59 @@ var TransedEditor = {
         $(".editor-pane").scrollbars({
             forceScrollbars:true,
             persistantSize:true,
-            scrollbarAutohide:true
+            scrollbarAutohide:false
         });
+
+        $(".trans_to_buttons button")
+            .mouseover(function(e){
+                $(this).animate({height:26}, { duration: 100, queue: false, complete: function(){
+                    $(this).mouseout(function(e){
+                        $(this).unbind("mouseuout");
+                        $(this).animate({height:10}, { duration: 100, queue: false});
+                    });
+                }});
+            })
+            .click(function(){
+                var el = $(this);
+                if($("#source_language").attr("lang") == undefined ||
+                    $("#translated_language").attr("lang") == undefined ) {
+
+                        var popoverTimeout = setTimeout(function(){
+                            $("#choose_lang_separator").popover('hide');
+                        }, 5000);
+
+                        $("#choose_lang_separator").popover('show');
+                        $(".popover_close").click(function(){
+                            clearTimeout(popoverTimeout);
+                            $("#choose_lang_separator").popover('hide');
+                        })
+                        return;
+                }
+                var textToTranslate = el
+                    .parents(".sentence-block")
+                    .find(".trans_from textarea").val();
+
+                var sendedData = {
+                    q: textToTranslate,
+                    langpair: $("#source_language").attr("lang")+"|"+$("#translated_language").attr("lang")
+                };
+                console.log(sendedData);
+
+                $.ajax({
+                    url: "http://mymemory.translated.net/api/get",
+                    type: "get",
+                    data: sendedData,
+                    dataType: "json",
+                    success: function(data){
+                        el
+                            .parents(".sentence-block")
+                            .find(".trans_to textarea").val(data.responseData["translatedText"]);
+                    },
+                    error: function(){
+
+                    }
+                });
+            });
     },
 
     setEditedText: function(text) {
@@ -236,7 +324,11 @@ var TransedEditor = {
                     console.log("Read failed: " + e.toString());
                 };
 
-                fileReader.readAsText(file);
+                try {
+                    fileReader.readAsText(file);
+                } catch(e) {
+                    console.log(e);
+                }
             }, self.fileErrorHandler);
         }
     },
@@ -280,6 +372,12 @@ var TransedEditor = {
         $(".footer")
             .html("File: " + self.instance.name )
             .show();
+
+        $(".top-menu-save")
+            .parents("li")
+            .removeClass("disabled");
+
+        self.displayExportBox();
     },
 
     onResize: function(){
@@ -307,12 +405,85 @@ var TransedEditor = {
         }
     },
 
+    saveToTrs: function(fileEntry) {
+        var self = TransedEditor;
+
+        // here we will prepare some basic save format on top of JSON
+
+        console.log(chrome.app);
+
+        var savedData = {
+            type:       "trs",
+            app:        "Transed Translation Editor",
+            version:    self.manifest.version,
+            source:     self.instance.name,
+            date:       (new Date).toDateString(),
+            time:       (new Date).toTimeString(),
+            timestamp:  (new Date).getTime(),
+            paragraphs: []
+        }
+
+        var sentenceNum = 0;
+        var paragraph = {};
+        var sentence = {};
+
+        for(var p = 0; p < self.paragraphs.length; p++) {
+            paragraph = {
+                id: p,
+                sentences: []
+            };
+            for(var s = 0; s < self.paragraphs[p].sentences.length; s++) {
+                sentence = {
+                    id: sentenceNum,
+                    source: $($(".trans_from").get(sentenceNum)).find("textarea").val(),
+                    translation: $($(".trans_to").get(sentenceNum)).find("textarea").val()
+                };
+
+                paragraph.sentences.push(sentence);
+                sentenceNum++;
+            }
+            savedData.paragraphs.push(paragraph)
+        }
+
+        fileEntry.createWriter(function(fileWriter) {
+            fileWriter.onerror = function(e) {
+                console.log("Write failed: " + e.toString());
+            };
+
+            var blob = new Blob([JSON.stringify(savedData, null, 4)]);
+
+            fileWriter.truncate(blob.size);
+
+            fileWriter.onwriteend = function() {
+                fileWriter.onwriteend = function(e) {
+                    console.log("Write completed.");
+                };
+
+                fileWriter.write(blob);
+            }
+        }, TransedEditor.fileErrorHandler);
+    },
+
+    saveToTxt: function() {
+
+    },
+
+    saveToCsv: function() {
+
+    },
+
+    loadManifest: function(){
+        var self = this;
+        self.manifest = chrome.runtime.getManifest();
+    },
+
     init: function(){
         var self = this;
 
         $(document).ready(function(){
             self.bindListeners();
             self.bindTopMenu();
+            self.loadManifest();
 
             self.headerHeight = $(".navbar").height();
             self.footerHeight = 70;
@@ -320,6 +491,17 @@ var TransedEditor = {
 
             self.templating();
             self.onResize();
+
+            $("#choose_lang_separator").popover({
+                'html'      :true,
+                'trigger'   :'manual',
+                'placement' :'top',
+                'title'     :'Languages not selected<div class="popover_close pull-right"><span class="icon-remove"></span></div>',
+                'content'   :'You need to specify Source and Translation languages'
+            });
+
+            $(".dropup").first().popover('show');
+
         });
 
         return self;

@@ -9,8 +9,7 @@
     },
     "permissions": [
         {"fileSystem": ["write"]},
-        "unlimitedStorage",
-        "contextMenus"
+        "http://mymemory.translated.net/api/"
     ],
     "icons": { "16": "images/transed-16.png", "128": "images/transed-128.png" }
 }

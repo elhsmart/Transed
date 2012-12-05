@@ -17,9 +17,11 @@
                         <li><span class="project-name"><img src="/images/transed-128-white.png"/>Transed</span></li>
                         <li></li>
                         <li><a><span class="icon-folder-open icon-white"></span> Open</a></li>
-                        <li class="disabled"><a><span class="icon-save icon-white"></span> Save</a></li>
+                        <li class="disabled"><a><span class="top-menu-save icon-save icon-white"></span> Save</a></li>
+                        <!--
+                        Temporary hided for frst release. Functionality will be added soon
                         <li class="disabled"><a><span class="icon-undo icon-white"></span> Undo</a></li>
-                        <li class="disabled"><a><span class="top-menu-redo icon-repeat icon-white"></span> Redo</a></li>
+                        <li class="disabled"><a><span class="top-menu-redo icon-repeat icon-white"></span> Redo</a></li>-->
                     </ul>
                     <ul class="nav pull-right nav-window-controls">
                         <li><a><span class="icon-minus"></span></a></li>
@@ -42,7 +44,40 @@
 
             </div>
         </div>
+        <div class="editor-buttons">
+            <div class="btn-group dropup pull-left" style="margin-left:5px;">
+                <button id="source_language" class="btn">Source Language</button>
+                <button class="btn dropdown-toggle" data-toggle="dropdown">
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a lang="en" href="#">English</a></li>
+                    <li><a lang="fr" href="#">French</a></li>
+                    <li><a lang="ru" href="#">Russian</a></li>
+                    <li><a lang="es" href="#">Spanish</a></li>
+                    <li><a lang="de" href="#">German</a></li>
+                </ul>
+            </div>
+            <div id="choose_lang_separator" style="width:10px; height:30px; float:left;"></div>
+            <div class="btn-group dropup pull-left">
+                <button id="translated_language" class="btn">Translated Language</button>
+                <button class="btn dropdown-toggle" data-toggle="dropdown">
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a lang="en" href="#">English</a></li>
+                    <li><a lang="fr" href="#">French</a></li>
+                    <li><a lang="ru" href="#">Russian</a></li>
+                    <li><a lang="es" href="#">Spanish</a></li>
+                    <li><a lang="de" href="#">German</a></li>
+                </ul>
+            </div>
 
+            <div class="pull-right">
+                <button class="btn btn-info">Export to CSV</button>
+                <button class="btn btn-info">Export to TXT</button>
+            </div>
+        </div>
         <div class="footer"></div>
         <div class="support text-measure"></div>
     </body>
