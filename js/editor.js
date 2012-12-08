@@ -44,9 +44,9 @@ var TransedEditor = {
         about: {
             frame: "none",
             width:      600,
-            height:     300,
+            height:     420,
             minWidth:   600,
-            minHeight:  300,
+            minHeight:  420,
             left:       0,
             top:        0
         },
@@ -794,10 +794,12 @@ var TransedEditor = {
 
         (function() {
             var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = 'https://ssl.google-analytics.com/ga.js';
+            ga.src = '/js/ga.js';
             var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
         })();
-
+        chrome.commands.onCommand.addListener(function(command) {
+            console.log('Command:', command);
+        });
         return self;
     }
 };

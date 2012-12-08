@@ -64,6 +64,7 @@ var TransedBackground = {
         var screen  = self.detectScreen();
 
         self.startWindow();
+
         return self;
     }
 
