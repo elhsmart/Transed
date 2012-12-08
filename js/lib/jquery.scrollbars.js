@@ -379,17 +379,21 @@
 						$("*"),
 						"mousemove",
 						function(e, obj) {
-							var data = methods.getData.call(obj),
-								axis = data['activeAxis'],
-								pos = data['activePosition'];
-							
-							if (axis && pos) {
-								var newPos = data['activePosition']  = axis === 'X' ? e.pageX : e.pageY;
-								var disPos = newPos - pos;
+                            try {
+                                var data = methods.getData.call(obj),
+                                    axis = data['activeAxis'],
+                                    pos = data['activePosition'];
 
-								methods.move.call(obj, disPos, axis);
-								methods.setData.call(obj, data);
-							}
+                                if (axis && pos) {
+                                    var newPos = data['activePosition']  = axis === 'X' ? e.pageX : e.pageY;
+                                    var disPos = newPos - pos;
+
+                                    methods.move.call(obj, disPos, axis);
+                                    methods.setData.call(obj, data);
+                                }
+                            } catch(e){
+                                return;
+                            }
 						}
 					],
 					"starMouseup": [
@@ -561,6 +565,46 @@
 					});
 				});
 			},
+
+            "removeEvents": function(axis) {
+                // Scopeless copy of this
+                var obj = this;
+
+                // Get data
+                var data = methods.getData.call(obj);
+                events = {
+                    "draggerMousedown":[obj,'mousedown'],
+                    "starMousemove":[obj,'mousemove'],
+                    "starMouseup":[obj, 'mouseup'],
+                    "dragConMousedown":[obj,'mousedown']
+                }
+
+                if (data.opts.keyboardControl) {
+                    events["objKeydown"] = [obj,'keydown'];
+                }
+
+                if (data.opts.dragContent) {
+                    events["contentMousedown"] = [obj, 'mousedown'];
+                    events['contentMousemove'] = [obj, 'mousemove'];
+                    events['contentMouseup'] = [obj, 'mouseup'];
+                }
+
+                if (data.opts.scrollbarAutohide) {
+                    events['objMouseEnter'] = [obj, 'mouseenter'];
+                    events['objMouseOut'] = [obj,'mouseout'];
+                }
+
+                if ($.fn.mousewheel && data.opts.mousewheelSupport) {
+                    events['objMousewheel'] = [obj, 'mousewheel'];
+                }
+
+                $.each(events, function(i, e) {
+                    var ele = e[0],
+                        eventName = e[1];
+                    ele.unbind(eventName);
+                });
+            },
+
 			"moveContent": function(distance, axis) {
 				var obj = this,
 					data = methods.getData.call(this),
@@ -702,7 +746,9 @@
 			},
 			"destroy": function(axis) {
 				var obj = this;
-				var data = methods.getData.call(this);
+                methods.removeEvents.call(obj);
+
+                var data = methods.getData.call(this);
 				if (!data) return false;
 				if (axis) {
 					obj.removeClass(classes["axisInUse"] + axis);

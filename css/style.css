@@ -1,5 +1,6 @@
 /* #5594c3 */
 .navbar, .navbar-inverse .navbar-inner {
+    z-index: 2;
     background-color: #0072C6;
     background-image: none;
     margin-bottom:0px;
@@ -79,7 +80,6 @@ a [class*=" icon-"] {
     display:none;
     position:absolute;
     bottom:0px;
-    padding-left:20px;
     height:25px;
     background:#0072C6;
     color:white;
@@ -87,11 +87,13 @@ a [class*=" icon-"] {
 }
 
 .welcome {
-    display:none;
+    margin-top:20px;
+    margin-left:20px;
+    *display:none;
 }
 
 .editor-pane {
-    *display:none;
+    display:none;
 }
 
 .editor-pane .rootWrap  {
@@ -127,6 +129,7 @@ a [class*=" icon-"] {
 }
 
 .container {
+    z-index:3;
     width: 98%;
 }
 
@@ -198,6 +201,7 @@ textarea {
 }
 
 .editor-buttons {
+    z-index: 4;
     display:none;
     width:100%;
     position:absolute;
@@ -233,4 +237,36 @@ textarea {
     -webkit-box-shadow:none;
     box-shadow:none;
     text-align: center;
+}
+
+.editor-block {
+    display:none;
+    position:absolute;
+    top:0px;
+    height:0px;
+    width:10000px;
+    height:100000px;
+    background:#222;
+    opacity: 0.1;
+    -webkit-opacity:0.1;
+    z-index:1;
+}
+
+.confirm-buttons {
+    margin: 0 auto;
+    width:265px;
+}
+
+.error-buttons {
+    margin: 0 auto;
+    width:122px;
+}
+
+.confirm-buttons .btn.btn-primary  {
+    width:100px;
+    margin-right:10px;
+}
+
+.error-buttons .btn.btn-danger  {
+    width:100px;
 }

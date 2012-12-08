@@ -49,23 +49,64 @@ var TransedEditor = {
             minHeight: 300,
             left: 0,
             top: 0
+        },
+        confirm: {
+            frame: "none",
+            width: 600,
+            height: 300,
+            minWidth: 600,
+            minHeight: 300,
+            left: 0,
+            top: 0
+        },
+        error: {
+            frame: "none",
+            width: 600,
+            height: 300,
+            minWidth: 600,
+            minHeight: 300,
+            left: 0,
+            top: 0
         }
     },
 
     menu: {
+        buttons: {
+            "btn-export-csv": function(el) {
+                el.live("click", function(){
+                    var suggestName = TransedEditor.getSuggestedName();
+
+                    chrome.fileSystem.chooseEntry({
+                        accepts         :   [{
+                            extensions      :["csv"],
+                        }],
+                        suggestedName   :   suggestName+".csv",
+                        type            :   'saveFile'
+                    }, TransedEditor.saveToCsv);
+                });
+            },
+
+            "btn-export-txt": function(el) {
+                el.live("click", function(){
+                    var suggestName = TransedEditor.getSuggestedName();
+
+                    chrome.fileSystem.chooseEntry({
+                        accepts         :   [{
+                            extensions      :["txt"],
+                        }],
+                        suggestedName   :   suggestName+".txt",
+                        type            :   'saveFile'
+                    }, TransedEditor.saveToTxt);
+                });
+            }
+        },
         topMenu: {
             "top-menu-save": function(el) {
                 el.parent().click(function(){
                     if(el.parents("li").hasClass("disabled")) {
                         return;
                     }
-
-                    var suggestName = TransedEditor.instance.name.split(".");
-                    suggestName.pop();
-                    suggestName = suggestName.join(".");
-                    if(suggestName.length == 0) {
-                        suggestName = "default";
-                    }
+                    var suggestName = TransedEditor.getSuggestedName();
 
                     chrome.fileSystem.chooseEntry({
                         accepts         :   [{
@@ -76,6 +117,7 @@ var TransedEditor = {
                     }, TransedEditor.saveToTrs);
                 });
             },
+
             "top-menu-undo": function(el) {
 
             },
@@ -84,35 +126,40 @@ var TransedEditor = {
             },
             "top-menu-about": function(el) {
                 el.parent().click(function(){
-                    try {
-                        if(TransedEditor.popup.about.instance != undefined) {
-                            TransedEditor.popup.about.instance.focus();
-                            return;
-                        }
-                    } catch (e) {
-                        delete TransedEditor.popup.about.instance;
-                        console.log("Seems like popup has been closed. Freeing memory for it.");
-                    }
+                    TransedEditor.checkPopupInstance(TransedEditor.popup.about.instance);
 
                     var currentWin  = chrome.app.window.current();
                     var popupScreen = TransedEditor.popup.about;
+                    delete popupScreen.instance;
+
                     popupScreen.top = currentWin.getBounds().top+((currentWin.getBounds().height - popupScreen.height)/2);
                     popupScreen.left = currentWin.getBounds().left+((currentWin.getBounds().width - popupScreen.width)/2);
 
                     chrome.app.window.create('html/about.html', popupScreen, function(popupWindow){
                         TransedEditor.popup.about.instance = popupWindow;
                     });
-                    console.log(TransedEditor);
                 });
             },
+
             "icon-folder-open": function(el) {
                 el.parent().click(function(){
-                    chrome.fileSystem.chooseEntry({
-                        accepts         :   [{
-                            extensions      :["txt","trs"]
-                        }],
-                        type            :   'openFile'
-                    }, TransedEditor.onFileOpen);
+                    console.log(TransedEditor.instance);
+                    if(TransedEditor.instance == undefined) {
+                        chrome.fileSystem.chooseEntry({
+                            accepts         :   [{
+                                extensions      :["txt","trs"]
+                            }],
+                            type            :   'openFile'
+                        }, TransedEditor.onFileOpen);
+                    } else {
+                        TransedEditor.displayConfirmPopup(function(){chrome.fileSystem.chooseEntry({
+                            accepts         :   [{
+                                extensions      :["txt","trs"]
+                            }],
+                            type            :   'openFile'
+                        }, TransedEditor.onFileOpen)},
+                        "Do you really want to open new file?\nAll your progress in current ssession will be lost, if you not save it.");
+                    }
                 });
             },
             "icon-resize-full": function(el) {
@@ -148,7 +195,7 @@ var TransedEditor = {
 
     displayExportBox: function() {
         $(".editor-buttons").show();
-
+        $(".welcome").hide();
         $(".dropup ul li a").click(function(){
             var checkedEl = $(this).parent();
             $(this).parents(".dropup").find("button:first")
@@ -166,11 +213,11 @@ var TransedEditor = {
 
     setEditedFile: function(fileEntry, callback) {
         var self = TransedEditor;
-        if(self.instance == undefined) {
+//        if(self.instance == undefined) {
             self.instance = fileEntry;
             callback();
             return;
-        }
+//        }
     },
 
     onFileOpen: function(fileEntry) {
@@ -181,7 +228,6 @@ var TransedEditor = {
     },
 
     measureText: function(width, text) {
-        console.log(text);
         var el = $(".text-measure");
 
         el
@@ -191,11 +237,29 @@ var TransedEditor = {
         return el.height();
     },
 
-    buildEditBox: function() {
+    getSuggestedName: function() {
+        var suggestName = TransedEditor.instance.name.split(".");
+        suggestName.pop();
+        suggestName = suggestName.join(".");
+        if(suggestName.length == 0) {
+            suggestName = "default";
+        }
+        return suggestName;
+    },
+
+    parseTextToParagraphs: function(){
         var self = this;
-        // replacing all repeated linebreaks
+        // simple checking for unused file formats
+        if(self.editedText.match(/\<script/g)) {
+            throw new Error("Sorry, Transed can't work with html/javascript files yet.");
+        }
+
+
         self.editedText = self.editedText.replace(/\n{2,}|\r\n{2,}/g, "\n");
         self.paragraphs = self.editedText.split("\n");
+
+        // Break any paragraph to sentences
+        // Need to be rebuilded in recursive way with checking for net symbols
 
         for(var paragraph in self.paragraphs) {
             self.paragraphs[paragraph] = $.trim(self.paragraphs[paragraph]).split(".");
@@ -223,13 +287,77 @@ var TransedEditor = {
                 number: parseInt(paragraph)+1,
                 sentences: self.paragraphs[paragraph]
             };
-        }
+        }            1
+        console.log(self.paragraphs);
 
         self.paragraphs = templateData;
+    },
 
+    parseTRSToParagraphs: function() {
+
+        var self = this;
+        self.editedText = JSON.parse(self.editedText);
+        // TODO Better idea to have @validateFormat method. But for now this is ok
+
+        if(self.editedText.type == undefined || self.editedText.type != "trs") {
+            throw new Error("Sorry, this file cannot be open.");
+        }
+
+        var paragraphs  = self.editedText.paragraphs;
+
+        var data = []
+        for(var obj in paragraphs) {
+            if(typeof paragraphs[obj] != "object") {
+                continue;
+            }
+            data[paragraphs[obj].id] = [];
+            for(var sentence in paragraphs[obj].sentences) {
+                if(typeof paragraphs[obj].sentences[sentence] != "object") {
+                    continue;
+                }
+
+                data[paragraphs[obj].id].push({
+                    translate_from: paragraphs[obj].sentences[sentence].source,
+                    translate_to: paragraphs[obj].sentences[sentence].translation,
+                    isLast: function(){ return this.number == this.length },
+                    number: parseInt(sentence)+1,
+                    height:  self.measureText(paragraphs[obj].sentences[sentence].source),
+                    length: paragraphs[obj].sentences.length
+                })
+            }
+            data[paragraphs[obj].id] = {
+                number: parseInt(obj)+1,
+                sentences: data[paragraphs[obj].id]
+            }
+        }
+
+        self.paragraphs = data;
+    },
+
+    buildEditBox: function() {
+        var self = this;
+        // replacing all repeated linebreaks
         $(".editor-pane").css({
             display: "block"
-        });
+        }).html("");
+
+        try {
+            if(isJSON(self.editedText)) {
+                self.parseTRSToParagraphs();
+            } else {
+                self.parseTextToParagraphs();
+            }
+        } catch(e) {
+            delete self.instance;
+            if($(".editor-pane").hasClass("scrollElement")) {
+                $(".editor-pane").scrollbars('destroy');
+            }
+            $(".editor-pane").hide();
+            $(".welcome").show();
+            $(".editor-buttons,.footer").hide();
+            self.displayErrorPopup(e.message);
+            return;
+        }
 
         $(".editor-pane").append(Handlebars.templates['editor.pane.html'](self));
 
@@ -251,56 +379,146 @@ var TransedEditor = {
             scrollbarAutohide:false
         });
 
+
         $(".trans_to_buttons button")
-            .mouseover(function(e){
-                $(this).animate({height:26}, { duration: 100, queue: false, complete: function(){
-                    $(this).mouseout(function(e){
-                        $(this).unbind("mouseuout");
-                        $(this).animate({height:10}, { duration: 100, queue: false});
-                    });
-                }});
-            })
-            .click(function(){
-                var el = $(this);
-                if($("#source_language").attr("lang") == undefined ||
-                    $("#translated_language").attr("lang") == undefined ) {
-
-                        var popoverTimeout = setTimeout(function(){
-                            $("#choose_lang_separator").popover('hide');
-                        }, 5000);
-
-                        $("#choose_lang_separator").popover('show');
-                        $(".popover_close").click(function(){
-                            clearTimeout(popoverTimeout);
-                            $("#choose_lang_separator").popover('hide');
-                        })
-                        return;
-                }
-                var textToTranslate = el
-                    .parents(".sentence-block")
-                    .find(".trans_from textarea").val();
-
-                var sendedData = {
-                    q: textToTranslate,
-                    langpair: $("#source_language").attr("lang")+"|"+$("#translated_language").attr("lang")
-                };
-                console.log(sendedData);
-
-                $.ajax({
-                    url: "http://mymemory.translated.net/api/get",
-                    type: "get",
-                    data: sendedData,
-                    dataType: "json",
-                    success: function(data){
-                        el
-                            .parents(".sentence-block")
-                            .find(".trans_to textarea").val(data.responseData["translatedText"]);
-                    },
-                    error: function(){
-
-                    }
+        .mouseover(function(e){
+            $(this).animate({height:26}, { duration: 100, queue: false, complete: function(){
+                $(this).mouseout(function(e){
+                    $(this).unbind("mouseuout");
+                    $(this).animate({height:10}, { duration: 100, queue: false});
                 });
+            }});
+        })
+        .click(function(){
+            var el = $(this);
+            if($("#source_language").attr("lang") == undefined ||
+                $("#translated_language").attr("lang") == undefined ) {
+
+                    var popoverTimeout = setTimeout(function(){
+                        $("#choose_lang_separator").popover('hide');
+                    }, 5000);
+
+                    $("#choose_lang_separator").popover('show');
+                    $(".popover_close").click(function(){
+                        clearTimeout(popoverTimeout);
+                        $("#choose_lang_separator").popover('hide');
+                    })
+                    return;
+            }
+
+            var textToTranslate = el
+                .parents(".sentence-block")
+                .find(".trans_from textarea").val();
+
+            var sendedData = {
+                q: textToTranslate,
+                langpair: $("#source_language").attr("lang")+"|"+$("#translated_language").attr("lang")
+            };
+
+            console.log(sendedData);
+
+            $.ajax({
+                url: "http://mymemory.translated.net/api/get",
+                type: "get",
+                data: sendedData,
+                dataType: "json",
+                success: function(data){
+                    el
+                        .parents(".sentence-block")
+                        .find(".trans_to textarea").val(data.responseData["translatedText"]);
+                },
+                error: function(){
+                    self.displayErrorPopup("Where was and error in process request to Remote Translation Service.\nPlease try again later.");
+                }
             });
+        });
+    },
+
+    parsePopupMessage: function(message) {
+        message = message.split("\n");
+        for(i = 0; i < message.length; i++) {
+            message[i] = "\n<p>"+message[i]+"</p>";
+        }
+        message = message.join(" ");
+        return message;
+    },
+
+    checkPopupInstance: function(instance) {
+        try {
+            if(instance != undefined) {
+                instance.focus();
+                return;
+            }
+        } catch (e) {
+            delete instance;
+            console.log("Seems like popup has been closed. Freeing memory for it.");
+        }
+    },
+
+    displayErrorPopup: function(message) {
+        var self = this;
+        self.checkPopupInstance(TransedEditor.popup.error.instance);
+
+        // Little message conversion to paragraphs
+        message = self.parsePopupMessage(message);
+
+        // Creating popup
+        var currentWin  = chrome.app.window.current();
+        var popupScreen = TransedEditor.popup.error;
+        delete popupScreen.instance;
+
+        popupScreen.top = currentWin.getBounds().top+((currentWin.getBounds().height - popupScreen.height)/2);
+        popupScreen.left = currentWin.getBounds().left+((currentWin.getBounds().width - popupScreen.width)/2);
+
+        chrome.app.window.create('html/error.html', popupScreen, function(popupWindow){
+            TransedEditor.popup.error.instance = popupWindow;
+            popupWindow.contentWindow.onload = function(){
+                popupWindow.contentWindow.TransedError.setPopupText(message);
+            };
+        });
+
+        var self = this;
+    },
+
+    displayConfirmPopup: function(callback, message) {
+        var self = this;
+
+        self.confirmCallback = callback;
+        self.checkPopupInstance(TransedEditor.popup.confirm.instance);
+
+        // Little message conversion to paragraphs
+        message = self.parsePopupMessage(message);
+
+        // Event binding
+        chrome.runtime.getBackgroundPage(function(page){
+            page.TransedBackground.registerObserver("dialogConfirmFinish", self);
+        });
+
+        // Creating popup
+        var currentWin  = chrome.app.window.current();
+        var popupScreen = TransedEditor.popup.confirm;
+        delete popupScreen.instance;
+
+        popupScreen.top = currentWin.getBounds().top+((currentWin.getBounds().height - popupScreen.height)/2);
+        popupScreen.left = currentWin.getBounds().left+((currentWin.getBounds().width - popupScreen.width)/2);
+
+        chrome.app.window.create('html/confirm.html', popupScreen, function(popupWindow){
+            TransedEditor.popup.confirm.instance = popupWindow;
+            popupWindow.contentWindow.onload = function(){
+                popupWindow.contentWindow.TransedConfirm.setPopupText(message);
+            };
+        });
+    },
+
+    dialogConfirmFinish: function(message) {
+        var self = this;
+        if(message.result == "yes") {
+            self.confirmCallback();
+        }
+        chrome.runtime.getBackgroundPage(function(page){
+            page.TransedBackground.removeObserver("dialogConfirmFinish", self);
+        });
+        delete self.confirmCallback;
     },
 
     setEditedText: function(text) {
@@ -327,7 +545,8 @@ var TransedEditor = {
                 try {
                     fileReader.readAsText(file);
                 } catch(e) {
-                    console.log(e);
+                    delete self.instance;
+                    self.displayErrorPopup(e.message);
                 }
             }, self.fileErrorHandler);
         }
@@ -338,9 +557,14 @@ var TransedEditor = {
         for(var item in self.menu.topMenu) {
             self.menu.topMenu[item]($("."+item));
         }
+
+        for(var item in self.menu.buttons) {
+            self.menu.buttons[item]($("."+item));
+        }
     },
 
     fileErrorHandler: function(e) {
+        var self = this;
         var msg = "";
 
         switch (e.code) {
@@ -364,13 +588,15 @@ var TransedEditor = {
                 break;
         };
 
-        console.log("Error: " + msg);
+        self.displayErrorPopup(msg);
     },
 
     showToolbar: function() {
         var self = this;
         $(".footer")
-            .html("File: " + self.instance.name )
+            .find(".filedata")
+            .html("File: " + self.instance.name );
+        $(".footer")
             .show();
 
         $(".top-menu-save")
@@ -387,6 +613,15 @@ var TransedEditor = {
     bindListeners: function() {
         var self = this;
         $(window).resize(self.onResize);
+
+        //switchback if popup opened
+        $(".editor-block").click(function(){
+            for(var a in self.popup) {
+                if(self.popup[a].instance != undefined) {
+                    self.popup[a].instance.focus();
+                }
+            }
+        });
     },
 
     templating: function() {
@@ -410,13 +645,15 @@ var TransedEditor = {
 
         // here we will prepare some basic save format on top of JSON
 
-        console.log(chrome.app);
-
         var savedData = {
             type:       "trs",
             app:        "Transed Translation Editor",
             version:    self.manifest.version,
             source:     self.instance.name,
+            selection:  {
+                source: $("#source_language").attr("lang"),
+                dest:   $("#translated_language").attr("lang")
+            },
             date:       (new Date).toDateString(),
             time:       (new Date).toTimeString(),
             timestamp:  (new Date).getTime(),
@@ -445,12 +682,45 @@ var TransedEditor = {
             savedData.paragraphs.push(paragraph)
         }
 
+        self.saveFile(fileEntry, JSON.stringify(savedData, null, 4));
+    },
+
+    saveToTxt: function(fileEntry) {
+        var self            = TransedEditor;
+        var sentenceNum     = 0;
+        var data            = "";
+        for(var p = 0; p < self.paragraphs.length; p++) {
+            for(var s = 0; s < self.paragraphs[p].sentences.length; s++) {
+                data += $($(".trans_to").get(sentenceNum)).find("textarea").val();
+                sentenceNum++;
+            }
+            data += "\n";
+        }
+        self.saveFile(fileEntry, data);
+    },
+
+    saveToCsv: function(fileEntry) {
+        var self            = TransedEditor;
+        var sentenceNum     = 0;
+        var data            = "";
+        for(var p = 0; p < self.paragraphs.length; p++) {
+            for(var s = 0; s < self.paragraphs[p].sentences.length; s++) {
+                data += (sentenceNum+1)+';"'+$($(".trans_from").get(sentenceNum)).find("textarea").val()+'";"'+$($(".trans_to").get(sentenceNum)).find("textarea").val()+'"';
+                sentenceNum++;
+            }
+            data += "\n";
+        }
+        self.saveFile(fileEntry, data);
+    },
+
+    saveFile: function(fileEntry, data) {
+        var self = this;
         fileEntry.createWriter(function(fileWriter) {
             fileWriter.onerror = function(e) {
-                console.log("Write failed: " + e.toString());
+                self.displayErrorPopup("Write failed: " + e.toString());
             };
 
-            var blob = new Blob([JSON.stringify(savedData, null, 4)]);
+            var blob = new Blob([data]);
 
             fileWriter.truncate(blob.size);
 
@@ -464,23 +734,35 @@ var TransedEditor = {
         }, TransedEditor.fileErrorHandler);
     },
 
-    saveToTxt: function() {
-
-    },
-
-    saveToCsv: function() {
-
-    },
-
     loadManifest: function(){
         var self = this;
         self.manifest = chrome.runtime.getManifest();
+    },
+
+    messaging: function(){
+        var self = this;
+        chrome.runtime.getBackgroundPage(function(page){
+            page.TransedBackground.registerObserver("blockEditor", self);
+            page.TransedBackground.registerObserver("unblockEditor", self);
+        });
+        //chrome.runtime.getBackgroundPage()
+    },
+
+    blockEditor: function() {
+        $(".editor-block").show();
+        return true;
+    },
+
+    unblockEditor: function() {
+        $(".editor-block").hide();
+        return true;
     },
 
     init: function(){
         var self = this;
 
         $(document).ready(function(){
+
             self.bindListeners();
             self.bindTopMenu();
             self.loadManifest();
@@ -489,6 +771,7 @@ var TransedEditor = {
             self.footerHeight = 70;
             self.contentBlock = $(".editor-pane").get(0);
 
+            self.messaging();
             self.templating();
             self.onResize();
 

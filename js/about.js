@@ -4,6 +4,9 @@ var TransedAbout = {
         topMenu: {
             "icon-remove": function(el) {
                 el.parent().click(function(){
+                    chrome.runtime.getBackgroundPage(function(page){
+                        page.TransedBackground.fireEvent("unblockEditor", {message:"nya"});
+                    });
                     window.close();
                 })
             }
@@ -19,6 +22,9 @@ var TransedAbout = {
 
     init: function() {
         var self = this;
+        chrome.runtime.getBackgroundPage(function(page){
+            page.TransedBackground.fireEvent("blockEditor", {message:"nya"});
+        });
 
         $(document).ready(function(){
             self.bindTopMenu();

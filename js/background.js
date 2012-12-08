@@ -5,11 +5,42 @@ var TransedBackground = {
         y: 100
     },
 
+    events: {},
+
+    registerObserver: function(event, observer) {
+        var self = this;
+        if(typeof self.events[event] == "undefined") {
+            self.events[event] = [];
+        }
+        self.events[event].push(observer);
+    },
+
+    removeObserver: function(events, observer){
+        var self = this;
+        if(typeof self.events[event] == "undefined") {
+            for(var a in self.events[event]) {
+                if(self.events[event][a] == observer) {
+                    delete self.events[event][a];
+                }
+            }
+        }
+    },
+
+    fireEvent: function(event, message) {
+        var self = this;
+        if(typeof self.events[event] != "undefined") {
+            for(var a in self.events[event]) {
+                self.events[event][a][event](message);
+            }
+        }
+    },
+
     startWindow: function() {
         var self    = this;
         self.window = chrome.app.runtime.onLaunched.addListener(function() {
             chrome.app.window.create('html/transed.html', self.screen);
         });
+        console.log(self);
     },
 
     detectScreen: function() {

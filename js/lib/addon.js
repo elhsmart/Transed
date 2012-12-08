@@ -4,3 +4,15 @@ Array.prototype.remove = function(from, to) {
     this.length = from < 0 ? this.length + from : from;
     return this.push.apply(this, rest);
 };
+
+function isJSON(value) {
+    try {
+        var obj = JSON.parse(value);
+        if(typeof obj == "object") {
+            return true;
+        }
+        return false;
+    } catch (ex) {
+        return false;
+    }
+}
