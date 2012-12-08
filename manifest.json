@@ -11,5 +11,6 @@
         {"fileSystem": ["write"]},
         "http://mymemory.translated.net/api/"
     ],
+    "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
     "icons": { "16": "images/transed-16.png", "128": "images/transed-128.png" }
 }
