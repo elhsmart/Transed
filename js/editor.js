@@ -39,6 +39,8 @@ var TransedEditor = {
     manifest: null,
     // window state. normal / max / min
     state: "normal",
+    maximized: false,
+    minimized: false,
 
     popup: {
         about: {
@@ -166,21 +168,33 @@ var TransedEditor = {
                 el.attr("class", "icon-resize-full");
                 el.parent().click(function(){
                     var currentWin = chrome.app.window.current();
-                    if(!currentWin.isMaximized()) {
+                    if(typeof currentWin.isMaximized == "function" && !currentWin.isMaximized()) {
                         el.attr("class", "icon-resize-small");
                         currentWin.maximize();
+                        TransedEditor.maximized = true;
+                    // For old Chromes
+                    } else if(typeof currentWin.isMaximized != "function" && TransedEditor.maximized == false){
+                        el.attr("class", "icon-resize-small");
+                        currentWin.maximize();
+                        TransedEditor.maximized = true;
                     } else {
                         el.attr("class", "icon-resize-full");
                         currentWin.restore();
+                        TransedEditor.maximized = false;
                     }
                 })
             },
             "icon-minus": function(el) {
                 el.parent().click(function(){
                     var currentWin = chrome.app.window.current();
-                    if(!currentWin.isMinimized()) {
+                    if(typeof currentWin.isMinimized == "function" && !currentWin.isMinimized()) {
                         currentWin.minimize();
+                        TransedEditor.minimized = true;
+                    } else if(typeof currentWin.isMinimized != "function" && TransedEditor.minimized == false) {
+                        currentWin.minimize();
+                        TransedEditor.minimized = true;
                     } else {
+                        TransedEditor.minimized = false;
                         currentWin.restore();
                     }
                 })
